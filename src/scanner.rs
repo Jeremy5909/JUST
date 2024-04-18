@@ -44,23 +44,51 @@ impl Scanner {
 			'=' => if self._match('=') {TokenType::EQUAL_EQUAL} else {TokenType::EQUAL},
 			'<' => if self._match('=') {TokenType::LESS_EQUAL} else {TokenType::LESS},
 			'>' => if self._match('=') {TokenType::GREATER_EQUAL} else {TokenType::GREATER},
-			'/' => if self._match('/') {
-					// Comment until end of line
-					while self.peek() != '\n' && !self.is_at_end() {
-						self.advance();
-					};
-					TokenType::NONE
-				} else {
-					TokenType::SLASH
-				},
-			'\n' => {self.line += 1; TokenType::NONE},
-			' ' => TokenType::NONE,
-			'\r' => TokenType::NONE,
-			'\t' => TokenType::NONE,
 			_ => {error(self.line, "Unexpected character."); TokenType::NONE}
 		};
 
-		self.add_token(token, None)
+		
+		match c {
+			'/' => if self._match('/') {
+				while self.peek() != '\n' && !self.is_at_end(){self.advance();};
+			} else {
+				self.add_token(TokenType::SLASH, None);
+			},
+			' ' | '\r' | 't' => (),
+			'"' => self.string(),
+			'\n' => {self.line += 1},
+			_ => {
+				if c.is_digit(10) {
+					self.number();
+				} else {
+					self.add_token(token, None)};
+				}
+		}
+	}
+
+	fn number(&mut self) {
+		while self.peek().is_digit(10) {self.advance();}
+		if self.peek() == '.' && self.peek_next().is_digit(10) {
+			self.advance();
+			while self.peek().is_digit(10) {self.advance();}
+		}
+
+		let num = self.source[self.start as usize..self.current as usize].parse::<f32>();
+		self.add_token(TokenType::NUMBER, Some(Box::from(num)));
+	}
+
+	fn string(&mut self) {
+		while self.peek() != '"' && !self.is_at_end() {
+			if self.peek() == '\n' {self.line+=1};
+			self.advance();
+		}
+		if self.is_at_end() {
+			error(self.line, "Unterminated string");
+			return;
+		}
+		self.advance();
+		let value = &self.source[(self.start+1) as usize..(self.current - 1) as usize];
+		self.add_token(TokenType::STRING, value);
 	}
 
 	fn peek(&mut self) -> char {
