@@ -19,10 +19,10 @@ pub enum TokenType {
 }
 
 pub struct Token {
-    _type: TokenType,
-    lexeme: String,
-    literal: Option<Box<dyn std::any::Any>>,
-    line: i32
+    pub _type: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Box<dyn std::any::Any>>,
+    pub line: i32
 }
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

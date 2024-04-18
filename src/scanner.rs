@@ -7,6 +7,8 @@ struct Scanner {
 	current: i32,
 	line: i32
 }
+
+#[allow(dead_code)]
 impl Scanner {
 	fn new(source: &str) -> Self {
 		Self {source: source.to_string(), tokens: Vec::new(), start: 0, current: 0, line: 1}
@@ -27,8 +29,7 @@ impl Scanner {
 
 	fn scan_token(&mut self) {
 		let c = self.advance();
-
-		self.add_token(match c {
+		let token = match c {
 			'(' => TokenType::LEFT_PAREN,
 			')' => TokenType::RIGHT_PAREN,
 			'{' => TokenType::LEFT_BRACE,
@@ -57,7 +58,9 @@ impl Scanner {
 			'\r' => TokenType::NONE,
 			'\t' => TokenType::NONE,
 			_ => {error(self.line, "Unexpected character."); TokenType::NONE}
-		}, None)
+		};
+
+		self.add_token(token, None)
 	}
 
 	fn peek(&mut self) -> char {
@@ -82,7 +85,7 @@ impl Scanner {
 	// Creates new token for character
 	fn add_token(&mut self,_type: TokenType, literal: Option<Box<dyn std::any::Any>>) {
 		let text = &self.source[self.start as usize..self.current as usize];
-		self.tokens.push(Token{_type: _type, lexeme: text.to_string(), literal: literal, line: self.line});
+		self.tokens.push(Token{_type, lexeme: text.to_string(), literal, line: self.line});
 	}
 }
 
