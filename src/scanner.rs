@@ -28,7 +28,7 @@ impl Scanner {
 	fn scan_token(&mut self) {
 		let c = self.advance();
 
-		self.add_token(match c {
+		self.add_token(|sc| match c {
 			'(' => TokenType::LEFT_PAREN,
 			')' => TokenType::RIGHT_PAREN,
 			'{' => TokenType::LEFT_BRACE,
@@ -39,24 +39,24 @@ impl Scanner {
 			'+' => TokenType::PLUS,
 			';' => TokenType::SEMICOLON,
 			'*' => TokenType::STAR,
-			'!' => if self._match('=') {TokenType::BANG_EQUAL} else {TokenType::BANG},
-			'=' => if self._match('=') {TokenType::EQUAL_EQUAL} else {TokenType::EQUAL},
-			'<' => if self._match('=') {TokenType::LESS_EQUAL} else {TokenType::LESS},
-			'>' => if self._match('=') {TokenType::GREATER_EQUAL} else {TokenType::GREATER},
-			'/' => if self._match('/') {
+			'!' => if sc._match('=') {TokenType::BANG_EQUAL} else {TokenType::BANG},
+			'=' => if sc._match('=') {TokenType::EQUAL_EQUAL} else {TokenType::EQUAL},
+			'<' => if sc._match('=') {TokenType::LESS_EQUAL} else {TokenType::LESS},
+			'>' => if sc._match('=') {TokenType::GREATER_EQUAL} else {TokenType::GREATER},
+			'/' => if sc._match('/') {
 					// Comment until end of line
-					while self.peek() != '\n' && !self.is_at_end() {
-						self.advance();
+					while sc.peek() != '\n' && !sc.is_at_end() {
+						sc.advance();
 					};
 					TokenType::NONE
 				} else {
 					TokenType::SLASH
 				},
-			'\n' => {self.line += 1; TokenType::NONE},
+			'\n' => {sc.line += 1; TokenType::NONE},
 			' ' => TokenType::NONE,
 			'\r' => TokenType::NONE,
 			'\t' => TokenType::NONE,
-			_ => {error(self.line, "Unexpected character."); TokenType::NONE}
+			_ => {error(sc.line, "Unexpected character."); TokenType::NONE}
 		}, None)
 	}
 
@@ -80,9 +80,11 @@ impl Scanner {
 	}
 
 	// Creates new token for character
-	fn add_token(&mut self,_type: TokenType, literal: Option<Box<dyn std::any::Any>>) {
+	fn add_token(&mut self, mut _type: impl FnMut(&mut Self) -> TokenType, literal: Option<Box<dyn std::any::Any>>) {
+        let ttype = _type(self);
+
 		let text = &self.source[self.start as usize..self.current as usize];
-		self.tokens.push(Token{_type: _type, lexeme: text.to_string(), literal: literal, line: self.line});
+		self.tokens.push(Token{_type: ttype, lexeme: text.to_string(), literal, line: self.line});
 	}
 }
 
