@@ -19,7 +19,7 @@ impl Scanner {
 			self.start = self.current;
 			self.scan_token();
 		}
-		self.tokens.push(Token{_type: crate::lex::TokenType::EOF, lexeme: "".to_string(), literal: None, line: self.line, });
+		self.tokens.push(Token{_type: crate::lex::TokenType::EOF, lexeme: "".to_string(), line: self.line, });
 		&self.tokens
 	}
 
@@ -52,7 +52,7 @@ impl Scanner {
 			'/' => if self._match('/') {
 				while self.peek() != '\n' && !self.is_at_end(){self.advance();};
 			} else {
-				self.add_token(TokenType::SLASH, None);
+				self.add_token(TokenType::SLASH);
 			},
 			' ' | '\r' | 't' => (),
 			'"' => self.string(),
@@ -61,7 +61,7 @@ impl Scanner {
 				if c.is_digit(10) {
 					self.number();
 				} else {
-					self.add_token(token, None)};
+					self.add_token(token)};
 				}
 		}
 	}
@@ -72,9 +72,8 @@ impl Scanner {
 			self.advance();
 			while self.peek().is_digit(10) {self.advance();}
 		}
-
-		let num = self.source[self.start as usize..self.current as usize].parse::<f32>();
-		self.add_token(TokenType::NUMBER, Some(Box::from(num)));
+		let value = TokenType::NUMBER(self.source[self.start as usize..self.current as usize].parse::<f32>().unwrap())
+		self.add_token(value);
 	}
 
 	fn string(&mut self) {
@@ -88,7 +87,7 @@ impl Scanner {
 		}
 		self.advance();
 		let value = &self.source[(self.start+1) as usize..(self.current - 1) as usize];
-		self.add_token(TokenType::STRING, value);
+		self.add_token(TokenType::STRING(value.to_string()));
 	}
 
 	fn peek(&mut self) -> char {
@@ -111,9 +110,9 @@ impl Scanner {
 	}
 
 	// Creates new token for character
-	fn add_token(&mut self,_type: TokenType, literal: Option<Box<dyn std::any::Any>>) {
+	fn add_token(&mut self,_type: TokenType) {
 		let text = &self.source[self.start as usize..self.current as usize];
-		self.tokens.push(Token{_type, lexeme: text.to_string(), literal, line: self.line});
+		self.tokens.push(Token{_type, lexeme: text.to_string(), line: self.line});
 	}
 }
 

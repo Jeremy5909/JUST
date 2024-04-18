@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{fmt::Debug, io::{stdin, stdout, Write}};
+use std::{any::Any, fmt::Debug, io::{stdin, stdout, Write}};
 
 #[derive(Debug)]
 pub enum TokenType {
@@ -11,22 +11,22 @@ pub enum TokenType {
     LESS_EQUAL, LESS,
     GREATER_EQUAL, GREATER,
 
-    STRING, NUMBER,
+    STRING(String), NUMBER(f32),
 
     EOF,
 
     NONE
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub _type: TokenType,
     pub lexeme: String,
-    pub literal: Option<Box<dyn std::any::Any>>,
     pub line: i32
 }
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} {} {:?}", self._type, self.lexeme, self.literal)
+        write!(f, "{:?} {}", self._type, self.lexeme)
 
     }
 }
