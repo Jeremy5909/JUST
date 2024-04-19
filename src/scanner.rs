@@ -5,9 +5,9 @@ use crate::lex::{error, Token, TokenType};
 pub struct Scanner {
 	source: String,
 	tokens: Vec<Token>,
-	start: i32,
-	current: i32,
-	line: i32,
+	start: usize,
+	current: usize,
+	line: usize,
 	keywords: HashMap<String, TokenType>,
 }
 
@@ -38,31 +38,26 @@ impl Scanner {
 	}
 
 	fn is_at_end(&mut self) -> bool {
-		self.current >= (self.source.len()-1) as i32
+		self.current >= self.source.len()
 	}
 
 	fn scan_token(&mut self) {
 		let c = self.advance();
-		let token = match c {
-			'(' => TokenType::LEFT_PAREN,
-			')' => TokenType::RIGHT_PAREN,
-			'{' => TokenType::LEFT_BRACE,
-			'}' => TokenType::RIGHT_BRACE,
-			',' => TokenType::COMMA,
-			'.' => TokenType::DOT,
-			'-' => TokenType::MINUS,
-			'+' => TokenType::PLUS,
-			';' => TokenType::SEMICOLON,
-			'*' => TokenType::STAR,
-			'!' => if self._match('=') {TokenType::BANG_EQUAL} else {TokenType::BANG},
-			'=' => if self._match('=') {TokenType::EQUAL_EQUAL} else {TokenType::EQUAL},
-			'<' => if self._match('=') {TokenType::LESS_EQUAL} else {TokenType::LESS},
-			'>' => if self._match('=') {TokenType::GREATER_EQUAL} else {TokenType::GREATER},
-			_ => {error(self.line, &format!("Unexpected character: '{}'.", c)); TokenType::NONE}
-		};
-
-		
 		match c {
+			'(' => self.add_token(TokenType::LEFT_PAREN),
+			')' => self.add_token(TokenType::RIGHT_PAREN),
+			'{' => self.add_token(TokenType::LEFT_BRACE),
+			'}' => self.add_token(TokenType::RIGHT_BRACE),
+			',' => self.add_token(TokenType::COMMA),
+			'.' => self.add_token(TokenType::DOT),
+			'-' => self.add_token(TokenType::MINUS),
+			'+' => self.add_token(TokenType::PLUS),
+			';' => self.add_token(TokenType::SEMICOLON),
+			'*' => self.add_token(TokenType::STAR),
+			'!' => if self._match('=') {self.add_token(TokenType::BANG_EQUAL)} else {self.add_token(TokenType::BANG)},
+			'=' => if self._match('=') {self.add_token(TokenType::EQUAL_EQUAL)} else {self.add_token(TokenType::EQUAL)},
+			'<' => if self._match('=') {self.add_token(TokenType::LESS_EQUAL)} else {self.add_token(TokenType::LESS)},
+			'>' => if self._match('=') {self.add_token(TokenType::GREATER_EQUAL)} else {self.add_token(TokenType::GREATER)},
 			'/' => if self._match('/') {
 				while self.peek() != '\n' && !self.is_at_end(){self.advance();};
 			} else {
@@ -71,16 +66,16 @@ impl Scanner {
 			' ' | '\r' | 't' => (),
 			'"' => self.string(),
 			'\n' => {self.line += 1},
+
 			_ => {
 				if c.is_digit(10) {
 					self.number();
 				} else if c.is_alphabetic() {
 					self.identifier();
-				}
-				else {
-					self.add_token(token)};
-				}
-		}
+				} else {
+					error(self.line, &format!("Unexpected character: '{}'.", c))
+				}}
+		};
 	}
 
 	fn identifier(&mut self) {
@@ -102,12 +97,12 @@ impl Scanner {
 			self.advance();
 			while self.peek().is_digit(10) {self.advance();}
 		}
-		let value = TokenType::NUMBER(self.source[self.start as usize..self.current as usize].parse::<f32>().unwrap());
+		let value = TokenType::NUMBER(self.source[self.start as usize..self.current as usize].parse::<f32>().expect("Cannot convert number to number"));
 		self.add_token(value);
 	}
 
 	fn peek_next(&mut self) -> char {
-		if self.current + 1 >= self.source.len() as i32 {return '\0'}
+		if self.current + 1 >= self.source.len() {return '\0'}
 		self.source.chars().nth((self.current + 1) as usize).unwrap()
 	}
 
@@ -141,7 +136,7 @@ impl Scanner {
 	// Gets next character
 	fn advance(&mut self) -> char {
 		self.current += 1;
-		self.source.chars().nth(self.current as usize).unwrap()
+		self.source.chars().nth(self.current-1 as usize).expect("Next character not found")
 	}
 
 	// Creates new token for character
