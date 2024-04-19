@@ -3,7 +3,7 @@ use std::{env, fs, io::{stdin, stdout, Write}};
 use crate::scanner::Scanner;
 
 mod scanner;
-mod lex;
+mod token;
 
 fn main() {
 	let args: Vec<String> = env::args().collect();

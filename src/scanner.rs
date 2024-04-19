@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::lex::{error, Token, TokenType};
+use crate::token::{error, Token, TokenType};
 
 pub struct Scanner {
 	source: String,
@@ -33,7 +33,7 @@ impl Scanner {
 			self.start = self.current;
 			self.scan_token();
 		}
-		self.tokens.push(Token{_type: crate::lex::TokenType::EOF, lexeme: "".to_string(), line: self.line, });
+		self.tokens.push(Token{_type: crate::token::TokenType::EOF, lexeme: "".to_string(), line: self.line, });
 		&self.tokens
 	}
 
