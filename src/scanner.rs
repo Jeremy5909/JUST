@@ -1,20 +1,34 @@
+use std::collections::HashMap;
+
 use crate::lex::{error, Token, TokenType};
 
-struct Scanner {
+pub struct Scanner {
 	source: String,
 	tokens: Vec<Token>,
 	start: i32,
 	current: i32,
-	line: i32
+	line: i32,
+	keywords: HashMap<String, TokenType>,
 }
 
 #[allow(dead_code)]
 impl Scanner {
-	fn new(source: &str) -> Self {
-		Self {source: source.to_string(), tokens: Vec::new(), start: 0, current: 0, line: 1}
+	pub fn new(source: &str) -> Self {
+		Self {source: source.to_string(),
+			tokens: Vec::new(),
+			start: 0,
+			current: 0,
+			line: 1,
+			keywords: HashMap::from([
+				("if".to_string(), TokenType::IF),
+				("nil".to_string(), TokenType::NIL),
+				("while".to_string(), TokenType::WHILE),
+				("true".to_string(), TokenType::TRUE),
+				("false".to_string(), TokenType::FALSE),
+			])}
 	} 
 
-	fn scan_tokens(&mut self) -> &Vec<Token> {
+	pub fn scan_tokens(&mut self) -> &Vec<Token> {
 		while !self.is_at_end() {
 			self.start = self.current;
 			self.scan_token();
@@ -24,7 +38,7 @@ impl Scanner {
 	}
 
 	fn is_at_end(&mut self) -> bool {
-		self.current >= self.source.len() as i32
+		self.current >= (self.source.len()-1) as i32
 	}
 
 	fn scan_token(&mut self) {
@@ -44,7 +58,7 @@ impl Scanner {
 			'=' => if self._match('=') {TokenType::EQUAL_EQUAL} else {TokenType::EQUAL},
 			'<' => if self._match('=') {TokenType::LESS_EQUAL} else {TokenType::LESS},
 			'>' => if self._match('=') {TokenType::GREATER_EQUAL} else {TokenType::GREATER},
-			_ => {error(self.line, "Unexpected character."); TokenType::NONE}
+			_ => {error(self.line, &format!("Unexpected character: '{}'.", c)); TokenType::NONE}
 		};
 
 		
@@ -60,10 +74,26 @@ impl Scanner {
 			_ => {
 				if c.is_digit(10) {
 					self.number();
-				} else {
+				} else if c.is_alphabetic() {
+					self.identifier();
+				}
+				else {
 					self.add_token(token)};
 				}
 		}
+	}
+
+	fn identifier(&mut self) {
+		while self.peek().is_alphanumeric() {self.advance();}
+		let text = &self.source[self.start as usize..self.current as usize];
+		let _type = self.keywords.get(text);
+
+		// IDENTIFIER by default
+		let _type = match _type {
+			None => TokenType::IDENTIFIER,
+			Some(x) => x.clone(),
+		};
+		self.add_token(_type);
 	}
 
 	fn number(&mut self) {
@@ -72,8 +102,13 @@ impl Scanner {
 			self.advance();
 			while self.peek().is_digit(10) {self.advance();}
 		}
-		let value = TokenType::NUMBER(self.source[self.start as usize..self.current as usize].parse::<f32>().unwrap())
+		let value = TokenType::NUMBER(self.source[self.start as usize..self.current as usize].parse::<f32>().unwrap());
 		self.add_token(value);
+	}
+
+	fn peek_next(&mut self) -> char {
+		if self.current + 1 >= self.source.len() as i32 {return '\0'}
+		self.source.chars().nth((self.current + 1) as usize).unwrap()
 	}
 
 	fn string(&mut self) {
