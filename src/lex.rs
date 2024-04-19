@@ -1,7 +1,5 @@
 use core::fmt;
-use std::{fs, fmt::Debug, io::{stdin, stdout, Write}};
-
-use crate::scanner::Scanner;
+use std::{fmt::Debug, io::{stdin, stdout, Write}};
 
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
@@ -37,33 +35,4 @@ impl fmt::Display for Token {
 
 pub fn error(line: usize, message: &str) {
     println!("[line {}] Error: {}", line, message);
-}
-
-
-fn run(line: &str) {
-    let mut scanner = Scanner::new(line);
-    let tokens = scanner.scan_tokens();
-    for token in tokens {
-        println!("{}", token);
-    }
-}
-
-pub fn run_file(path: &str) {
-    let contents = fs::read_to_string(path).expect(&format!("Could not find file: '{}'",path));
-    run(&contents);
-}
-
-pub fn run_prompt() {
-    loop {
-        print!("> ");
-
-        // Flush output
-        stdout().flush().unwrap();
-
-        // Get input
-        let mut line = String::new();
-        stdin().read_line(&mut line).unwrap();
-
-        run(&line);
-    }
 }
